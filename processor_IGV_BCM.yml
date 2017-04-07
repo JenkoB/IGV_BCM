@@ -1,0 +1,107 @@
+# ===============
+# IGV Session-BCM
+# ===============
+---
+
+- slug: igv-bcm
+  name: IGV 2.3.91 for BCM
+  requirements:
+    expression-engine: jinja
+  data_name: "IGV session ({{ data_set }})"
+  version: 0.0.5
+  type: data:igv:bcm
+  category: analyses
+  persistence: CACHED
+  description: >
+    Process creates a registry file for Integrative Genomics Viewer (IGV) accessible on following link http://taco-wiki.grid.bcm.edu/genialis/igv/registry.txt.
+  input:
+    - name: data_set
+      label: Name of data set/collection
+      type: basic:string
+    - name: bam
+      label: BAM files
+      type: list:data:alignment:bam
+      required: False
+      description: >
+        List of bam files.
+    - name: upload_bed
+      label: Uploaded BED files
+      type: list:data:bed
+      required: False
+      description: >
+        List of uploaded bed files.
+    - name: rose2_results
+      label: ROSE2  BED files
+      type: list:data:chipseq:rose2
+      required: False
+      description: >
+        ROSE2 BED files.
+    - name: macs14_results
+      label: Macs 1.4 BED and WIG files
+      type: list:data:chipseq:macs14
+      required: False
+      description: >
+        Macs 1.4 peaks BED, summits BED and WIG files
+    - name: macs2_results
+      label: Macs2 (call peaks) BED and WIG files
+      type: list:data:chipseq:macs2:callpeak
+      required: False
+      description: >
+        MACS2 summits BED files.
+    - name: annotation
+      label: Annotation files (GFF3/GTF)
+      type: list:data:annotation
+      required: False
+      description: >
+        List of annotation files.
+  output:
+    - name: wig
+      label: Wig files
+      type: list:basic:file
+      required: False
+  run:
+    runtime: polyglot
+    language: bash
+    program: |
+
+      {% if not bam and not upload_bed and not rose2_results and not macs14_results and not macs2_results and not annotation %}
+        re-error "Please provide bam, bed or wig file"
+      {% endif %}
+
+      BAM=()
+      ROSE2_BED=()
+      MACS14=()
+      MACS2=()
+      UPLOAD_BED=()
+      ANNOTATION=()
+      FILES=()
+
+      {% if macs14_results %}
+        {% for f in macs14_results %}
+          NAME_WIG=`basename "{{ f.wiggle.file }}" .zip`
+
+          unzip "{{ f.wiggle.file }}"
+          for dir in `ls -v "${NAME_WIG}"`
+          do
+            mv "${NAME_WIG}/$dir/"*.wig.gz .
+          done
+          data_id={{ proc.data_id }}
+          WIG=(*.wig.gz)
+          WIG_PATH=( "${WIG[@]/#//storage/genialis/bcm.genialis.com/data/$data_id/}" )
+          echo "${WIG_PATH[@]}"
+          MACS14+=("{{ f.peaks_bed.file }}" "${WIG_PATH[@]}" "{{ f.summits_bed.file }}")
+        {% endfor %}
+      {% endif %}
+
+      BAM+=({% if bam %}{% for bam_file in bam %}"{{ bam_file.bam.file }}" {% endfor %}{% endif %})
+      ROSE2_BED+=({% if rose2_results %}{% for bed_file in rose2_results %}"{{ bed_file.enhancers_with_super.file }}" {% endfor %}{% endif %})
+      MACS2+=({% if macs2_results %}{% for f in macs2_results %} "{{ f.summits.file }}" {% endfor %}{% endif %})
+      UPLOAD_BED+=({% if upload_bed %}{% for f in upload_bed %} "{{ f.BED.file }}"{% endfor %}{% endif %})
+      ANNOTATION+=({% if annotation %}{% for f in annotation %} {% if f.gff %}"{{ f.gff.file }}"{% else %}"{{ f.gtf.file }}" {% endif %}{% endfor %}{% endif %})
+
+      FILES+=("${ROSE2_BED[@]}" "${MACS14[@]}" "${MACS2[@]}" "${UPLOAD_BED[@]}" "${ANNOTATION[@]}")
+
+      make_igv_session_bcm.py --dataset_name {{data_set}} --bam_files "${BAM[@]}" --all_files "${FILES[@]}"
+      re-checkrc "Creating IGV session failed"
+
+      re-save-file-list wig "${WIG[@]}"
