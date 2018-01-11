@@ -7,8 +7,11 @@
   name: IGV 2.3.91 for BCM
   requirements:
     expression-engine: jinja
+    executor:
+      docker:
+        image: resolwebio/legacy:latest
   data_name: "IGV session ({{ data_set }})"
-  version: 0.0.5
+  version: 1.0.6
   type: data:igv:bcm
   category: analyses
   persistence: CACHED
