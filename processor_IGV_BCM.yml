@@ -11,7 +11,7 @@
       docker:
         image: resolwebio/legacy:latest
   data_name: "IGV session ({{ data_set }})"
-  version: 1.0.6
+  version: 1.0.7
   type: data:igv:bcm
   category: analyses
   persistence: CACHED
@@ -81,9 +81,9 @@
 
       {% if macs14_results %}
         {% for f in macs14_results %}
-          NAME_WIG=`basename "{{ f.wiggle.file }}" .zip`
+          NAME_WIG=`basename {{ f.wiggle.file }} .zip`
 
-          unzip "{{ f.wiggle.file }}"
+          unzip {{ f.wiggle.file }}
           for dir in `ls -v "${NAME_WIG}"`
           do
             mv "${NAME_WIG}/$dir/"*.wig.gz .
@@ -92,15 +92,15 @@
           WIG=(*.wig.gz)
           WIG_PATH=( "${WIG[@]/#//storage/genialis/bcm.genialis.com/data/$data_id/}" )
           echo "${WIG_PATH[@]}"
-          MACS14+=("{{ f.peaks_bed.file }}" "${WIG_PATH[@]}" "{{ f.summits_bed.file }}")
+          MACS14+=({{ f.peaks_bed.file }} "${WIG_PATH[@]}" {{ f.summits_bed.file }})
         {% endfor %}
       {% endif %}
 
-      BAM+=({% if bam %}{% for bam_file in bam %}"{{ bam_file.bam.file }}" {% endfor %}{% endif %})
-      ROSE2_BED+=({% if rose2_results %}{% for bed_file in rose2_results %}"{{ bed_file.enhancers_with_super.file }}" {% endfor %}{% endif %})
-      MACS2+=({% if macs2_results %}{% for f in macs2_results %} "{{ f.summits.file }}" {% endfor %}{% endif %})
-      UPLOAD_BED+=({% if upload_bed %}{% for f in upload_bed %} "{{ f.BED.file }}"{% endfor %}{% endif %})
-      ANNOTATION+=({% if annotation %}{% for f in annotation %} {% if f.gff %}"{{ f.gff.file }}"{% else %}"{{ f.gtf.file }}" {% endif %}{% endfor %}{% endif %})
+      BAM+=({% if bam %}{% for bam_file in bam %}{{ bam_file.bam.file }} {% endfor %}{% endif %})
+      ROSE2_BED+=({% if rose2_results %}{% for bed_file in rose2_results %}{{ bed_file.enhancers_with_super.file }} {% endfor %}{% endif %})
+      MACS2+=({% if macs2_results %}{% for f in macs2_results %} {{ f.summits.file }} {% endfor %}{% endif %})
+      UPLOAD_BED+=({% if upload_bed %}{% for f in upload_bed %} {{ f.BED.file }}{% endfor %}{% endif %})
+      ANNOTATION+=({% if annotation %}{% for f in annotation %} {% if f.gff %}{{ f.gff.file }}{% else %}{{ f.gtf.file }} {% endif %}{% endfor %}{% endif %})
 
       FILES+=("${ROSE2_BED[@]}" "${MACS14[@]}" "${MACS2[@]}" "${UPLOAD_BED[@]}" "${ANNOTATION[@]}")
 
