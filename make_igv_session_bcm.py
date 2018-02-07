@@ -7,11 +7,12 @@ import argparse
 from lxml import etree
 import os
 
-parser = argparse.ArgumentParser(description='Create igv session')
+parser = argparse.ArgumentParser(description="Create igv session")
 
-parser.add_argument("-n", "--dataset_name", required=True, help="Name of dataset/collection")
-parser.add_argument("-b", "--bam_files", required=False, nargs='*', help="List of bam files")
-parser.add_argument("-f", "--all_files", required=False, nargs='*', help="List of files")
+parser.add_argument('-n', '--dataset_name', required=True, help="Name of dataset/collection.")
+parser.add_argument('-g', '--genome', help="Geneome and annotation hosted by IGV.")
+parser.add_argument('-b', '--bam_files', required=False, nargs='*', help="List of bam files.")
+parser.add_argument('-f', '--all_files', required=False, nargs='*', help="List of files.")
 
 args = parser.parse_args()
 
@@ -41,7 +42,8 @@ else:
 Global = etree.Element(
     'Global',
     name=args.dataset_name,
-    version='1'
+    genome=args.genome,
+    version='3'
 )
 
 general_path = '/storage/genialis/bcm.genialis.com'

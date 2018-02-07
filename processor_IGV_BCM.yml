@@ -11,7 +11,7 @@
       docker:
         image: resolwebio/legacy:latest
   data_name: "IGV session ({{ data_set }})"
-  version: 1.0.7
+  version: 1.0.10
   type: data:igv:bcm
   category: analyses
   persistence: CACHED
@@ -21,6 +21,22 @@
     - name: data_set
       label: Name of data set/collection
       type: basic:string
+    - name: genome_annotation
+      label: Genome and annotation
+      type: basic:string
+      placeholder: Start typing
+      allow_custom_choice: true
+      choices:
+        - label: Human hg19
+          value: hg19
+        - label: Human hg38
+          value: hg38
+        - label: Mouse mm10
+          value: mm10
+        - label: Rat rn6
+          value: hg19
+      description: >
+        Select which IGV hosted genome assemblies should be loaded.
     - name: bam
       label: BAM files
       type: list:data:alignment:bam
@@ -104,7 +120,7 @@
 
       FILES+=("${ROSE2_BED[@]}" "${MACS14[@]}" "${MACS2[@]}" "${UPLOAD_BED[@]}" "${ANNOTATION[@]}")
 
-      make_igv_session_bcm.py --dataset_name {{data_set}} --bam_files "${BAM[@]}" --all_files "${FILES[@]}"
+      make_igv_session_bcm.py --dataset_name {{data_set}} --genome {{ genome_annotation }} --bam_files "${BAM[@]}" --all_files "${FILES[@]}"
       re-checkrc "Creating IGV session failed"
 
       re-save-file-list wig "${WIG[@]}"
